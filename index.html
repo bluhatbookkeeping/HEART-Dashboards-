@@ -164,11 +164,11 @@
     <div class="page-header-meta">Dashboard 1 of 4 · Splunk · HEART ecosystem</div>
     <h1>Notification Volume Dashboard</h1>
     <div class="page-header-controls">
-      <select><option>Last 7 days</option><option>Last 30 days</option><option>Last 12 months</option></select>
+      <select><option>Last 7 days</option><option>Last 30 days</option><option>Last 60 days</option><option>Last 90 days</option><option>Last 180 days</option><option>2026</option><option>2025</option><option>2024</option><option>All time</option></select>
     </div>
   </div>
 
-  <div class="notice gray">⚠ Volume data reflects combined totals across all lines of business (VA, FOH, FBI, USSS, DOI, FAA, DOL, RRB). The HEART vendor status table does not separate by individual LOB — this is a system limitation that would require significant engineering to change.</div>
+  <div class="notice gray">⚠ Volume data reflects combined totals across all lines of business (VA, FOH, FBI, USSS, DOI, FAA, DOL, RRB). The HEART vendor status table does not separate by individual LOB.</div>
 
   <div class="kpi-grid kpi-grid-4">
     <div class="kpi"><div class="kpi-label">Total calls</div><div class="kpi-value blue">18,420</div><div class="kpi-sub up">↑ 4.2% vs prior period</div></div>
@@ -278,47 +278,127 @@
     <div class="page-header-meta">Dashboard 3 of 4 · Splunk · HEART ecosystem</div>
     <h1>Notification Delivery Status Dashboard</h1>
     <div class="page-header-controls">
-      <select><option>Last 7 days</option><option>Last 30 days</option></select>
-      <select><option>All channels</option><option>SMS only</option><option>Calls only</option><option>Email only</option></select>
+      <select><option>Last 7 days</option><option>Last 30 days</option><option>Last 60 days</option><option>Last 90 days</option><option>Last 180 days</option><option>2026</option><option>2025</option><option>2024</option><option>All time</option></select>
+      <select id="channel-filter" onchange="filterChannel(this.value)"><option value="all">All channels</option><option value="sms">SMS only</option><option value="calls">Calls only</option><option value="email">Email only</option></select>
     </div>
   </div>
   <div class="notice gray">⚠ Delivery data reflects combined totals across all lines of business. LOB-level breakdown is not available in the current HEART data structure.</div>
-  <div class="kpi-grid kpi-grid-4">
-    <div class="kpi"><div class="kpi-label">Overall delivery rate</div><div class="kpi-value green">98.1%</div><div class="kpi-sub">34,437 of 35,103 sent</div></div>
-    <div class="kpi"><div class="kpi-label">Call connect rate</div><div class="kpi-value">82.3%</div><div class="kpi-sub">of calls answered</div></div>
-    <div class="kpi"><div class="kpi-label">SMS delivery rate</div><div class="kpi-value">99.1%</div><div class="kpi-sub">confirmed delivered</div></div>
-    <div class="kpi"><div class="kpi-label">Avg send-to-confirm</div><div class="kpi-value blue">3.2m</div><div class="kpi-sub">send to confirmed</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title">SMS sender ID breakdown</div>
-    <div class="card-sub">Which number claimants see when they receive a text — sourced from <code>HEART.CALL.VENDORSTATUS</code> via ReminderCall callback</div>
-    <div class="sender-grid" style="grid-template-columns:1fr 1fr;">
-      <div class="sender-card"><div class="sender-type">Primary sender</div><div class="sender-num">833-XXX-XXXX</div><div class="sender-pct">70% of SMS · 10-digit long code</div></div>
-      <div class="sender-card"><div class="sender-type">Secondary sender</div><div class="sender-num">855-XXX-XXXX</div><div class="sender-pct">30% of SMS · 10-digit long code</div></div>
 
+  <!-- ALL CHANNELS VIEW -->
+  <div id="ch-all">
+    <div class="kpi-grid kpi-grid-4">
+      <div class="kpi"><div class="kpi-label">Overall delivery rate</div><div class="kpi-value green">98.1%</div><div class="kpi-sub">34,437 of 35,103 sent</div></div>
+      <div class="kpi"><div class="kpi-label">Call connect rate</div><div class="kpi-value">82.3%</div><div class="kpi-sub">of calls answered</div></div>
+      <div class="kpi"><div class="kpi-label">SMS delivery rate</div><div class="kpi-value">99.1%</div><div class="kpi-sub">confirmed delivered</div></div>
+      <div class="kpi"><div class="kpi-label">Avg send-to-confirm</div><div class="kpi-value blue">3.2m</div><div class="kpi-sub">send to confirmed</div></div>
     </div>
-
-  </div>
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">Delivery rate trend by channel</div>
-      <div class="card-sub">7-day success rate per channel — all LOBs combined</div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-swatch" style="background:#1a5fb4"></div>Calls</div>
-        <div class="legend-item"><div class="legend-swatch" style="background:#1a7f4b"></div>SMS</div>
-        <div class="legend-item"><div class="legend-swatch" style="background:#92550a"></div>Email</div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Delivery rate trend — all channels</div>
+        <div class="card-sub">7-day success rate per channel — all LOBs combined</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-swatch" style="background:#1a5fb4"></div>Calls</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#1a7f4b"></div>SMS</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#92550a"></div>Email</div>
+        </div>
+        <div class="chart-wrap h180"><canvas id="c-delivery-trend"></canvas></div>
       </div>
-      <div class="chart-wrap h180"><canvas id="c-delivery-trend"></canvas></div>
+      <div class="card">
+        <div class="card-title">Failure reason breakdown — all channels</div>
+        <div class="card-sub">Why did sends fail?</div>
+        <div class="bar-list">
+          <div class="bar-row"><div class="bar-label">No answer</div><div class="bar-track"><div class="bar-fill" style="width:52%;background:#8b93b0"></div></div><div class="bar-val">52%</div></div>
+          <div class="bar-row"><div class="bar-label">Invalid number</div><div class="bar-track"><div class="bar-fill" style="width:23%;background:var(--red)"></div></div><div class="bar-val">23%</div></div>
+          <div class="bar-row"><div class="bar-label">Carrier block</div><div class="bar-track"><div class="bar-fill" style="width:14%;background:var(--amber)"></div></div><div class="bar-val">14%</div></div>
+          <div class="bar-row"><div class="bar-label">Vendor API error</div><div class="bar-track"><div class="bar-fill" style="width:7%;background:var(--blue)"></div></div><div class="bar-val">7%</div></div>
+          <div class="bar-row"><div class="bar-label">Opted out</div><div class="bar-track"><div class="bar-fill" style="width:4%;background:#8b93b0"></div></div><div class="bar-val">4%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMS ONLY VIEW -->
+  <div id="ch-sms" style="display:none;">
+    <div class="kpi-grid kpi-grid-3">
+      <div class="kpi"><div class="kpi-label">SMS delivery rate</div><div class="kpi-value green">99.1%</div><div class="kpi-sub">9,725 of 9,814 delivered</div></div>
+      <div class="kpi"><div class="kpi-label">Total SMS sent</div><div class="kpi-value blue">9,814</div><div class="kpi-sub">selected period</div></div>
+      <div class="kpi"><div class="kpi-label">Avg send-to-confirm</div><div class="kpi-value">1.4m</div><div class="kpi-sub">faster than calls</div></div>
     </div>
     <div class="card">
-      <div class="card-title">Failure reason breakdown</div>
-      <div class="card-sub">Why did sends fail?</div>
-      <div class="bar-list">
-        <div class="bar-row"><div class="bar-label">No answer</div><div class="bar-track"><div class="bar-fill" style="width:52%;background:#8b93b0"></div></div><div class="bar-val">52%</div></div>
-        <div class="bar-row"><div class="bar-label">Invalid number</div><div class="bar-track"><div class="bar-fill" style="width:23%;background:var(--red)"></div></div><div class="bar-val">23%</div></div>
-        <div class="bar-row"><div class="bar-label">Carrier block</div><div class="bar-track"><div class="bar-fill" style="width:14%;background:var(--amber)"></div></div><div class="bar-val">14%</div></div>
-        <div class="bar-row"><div class="bar-label">Vendor API error</div><div class="bar-track"><div class="bar-fill" style="width:7%;background:var(--blue)"></div></div><div class="bar-val">7%</div></div>
-        <div class="bar-row"><div class="bar-label">Opted out</div><div class="bar-track"><div class="bar-fill" style="width:4%;background:#8b93b0"></div></div><div class="bar-val">4%</div></div>
+      <div class="card-title">SMS sender ID breakdown</div>
+      <div class="card-sub">Which number claimants see when they receive a text — sourced from <code>HEART.CALL.VENDORSTATUS</code> via ReminderCall callback</div>
+      <div class="sender-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="sender-card"><div class="sender-type">Primary sender</div><div class="sender-num">833-XXX-XXXX</div><div class="sender-pct">70% of SMS · 10-digit long code</div></div>
+        <div class="sender-card"><div class="sender-type">Secondary sender</div><div class="sender-num">855-XXX-XXXX</div><div class="sender-pct">30% of SMS · 10-digit long code</div></div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">SMS delivery trend</div>
+        <div class="card-sub">7-day SMS success rate</div>
+        <div class="chart-wrap h180"><canvas id="c-sms-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">SMS failure reasons</div>
+        <div class="card-sub">Why did SMS sends fail?</div>
+        <div class="bar-list">
+          <div class="bar-row"><div class="bar-label">Invalid number</div><div class="bar-track"><div class="bar-fill" style="width:48%;background:var(--red)"></div></div><div class="bar-val">48%</div></div>
+          <div class="bar-row"><div class="bar-label">Carrier block</div><div class="bar-track"><div class="bar-fill" style="width:31%;background:var(--amber)"></div></div><div class="bar-val">31%</div></div>
+          <div class="bar-row"><div class="bar-label">Opted out</div><div class="bar-track"><div class="bar-fill" style="width:14%;background:#8b93b0"></div></div><div class="bar-val">14%</div></div>
+          <div class="bar-row"><div class="bar-label">Vendor API error</div><div class="bar-track"><div class="bar-fill" style="width:7%;background:var(--blue)"></div></div><div class="bar-val">7%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALLS ONLY VIEW -->
+  <div id="ch-calls" style="display:none;">
+    <div class="kpi-grid kpi-grid-3">
+      <div class="kpi"><div class="kpi-label">Call connect rate</div><div class="kpi-value green">82.3%</div><div class="kpi-sub">15,160 of 18,420 answered</div></div>
+      <div class="kpi"><div class="kpi-label">Total calls sent</div><div class="kpi-value blue">18,420</div><div class="kpi-sub">selected period</div></div>
+      <div class="kpi"><div class="kpi-label">Avg call duration</div><div class="kpi-value">4.8m</div><div class="kpi-sub">when answered</div></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Call connect rate trend</div>
+        <div class="card-sub">7-day call answer rate</div>
+        <div class="chart-wrap h180"><canvas id="c-calls-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Call failure reasons</div>
+        <div class="card-sub">Why did calls fail to connect?</div>
+        <div class="bar-list">
+          <div class="bar-row"><div class="bar-label">No answer</div><div class="bar-track"><div class="bar-fill" style="width:71%;background:#8b93b0"></div></div><div class="bar-val">71%</div></div>
+          <div class="bar-row"><div class="bar-label">Invalid number</div><div class="bar-track"><div class="bar-fill" style="width:16%;background:var(--red)"></div></div><div class="bar-val">16%</div></div>
+          <div class="bar-row"><div class="bar-label">Vendor API error</div><div class="bar-track"><div class="bar-fill" style="width:9%;background:var(--blue)"></div></div><div class="bar-val">9%</div></div>
+          <div class="bar-row"><div class="bar-label">Line busy</div><div class="bar-track"><div class="bar-fill" style="width:4%;background:var(--amber)"></div></div><div class="bar-val">4%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL ONLY VIEW -->
+  <div id="ch-email" style="display:none;">
+    <div class="kpi-grid kpi-grid-3">
+      <div class="kpi"><div class="kpi-label">Email delivery rate</div><div class="kpi-value green">99.4%</div><div class="kpi-sub">6,166 of 6,203 delivered</div></div>
+      <div class="kpi"><div class="kpi-label">Total emails sent</div><div class="kpi-value blue">6,203</div><div class="kpi-sub">selected period</div></div>
+      <div class="kpi"><div class="kpi-label">Avg send-to-confirm</div><div class="kpi-value">0.8m</div><div class="kpi-sub">fastest channel</div></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Email delivery trend</div>
+        <div class="card-sub">7-day email delivery rate</div>
+        <div class="chart-wrap h180"><canvas id="c-email-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Email failure reasons</div>
+        <div class="card-sub">Why did email sends fail?</div>
+        <div class="bar-list">
+          <div class="bar-row"><div class="bar-label">Invalid address</div><div class="bar-track"><div class="bar-fill" style="width:54%;background:var(--red)"></div></div><div class="bar-val">54%</div></div>
+          <div class="bar-row"><div class="bar-label">Mailbox full</div><div class="bar-track"><div class="bar-fill" style="width:24%;background:var(--amber)"></div></div><div class="bar-val">24%</div></div>
+          <div class="bar-row"><div class="bar-label">Spam filtered</div><div class="bar-track"><div class="bar-fill" style="width:14%;background:#8b93b0"></div></div><div class="bar-val">14%</div></div>
+          <div class="bar-row"><div class="bar-label">Vendor API error</div><div class="bar-track"><div class="bar-fill" style="width:8%;background:var(--blue)"></div></div><div class="bar-val">8%</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -332,8 +412,6 @@
     <div class="page-header-meta">Dashboard 4 of 4 · Splunk · HEART ecosystem</div>
     <h1>Configuration Reference Dashboard</h1>
     <div class="page-header-controls">
-      <span class="badge badge-dim">Read-only · Refreshes daily</span>
-      <span class="badge badge-dim">RHRP config → separate dashboard</span>
     </div>
   </div>
   <div class="notice amber">⚠ Each LOB has its own template configuration, channel preferences, and notification rules. Select a line of business below to see its specific setup.</div>
@@ -486,9 +564,7 @@
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span class="badge badge-dim">DOL</span>
         <span style="font-size:13px;font-weight:600;">Department of Labor — FECA + Energy</span>
-        <span class="badge badge-red" style="margin-left:auto;">Restricted</span>
       </div>
-      <div class="notice amber" style="margin-bottom:12px;">⚠ DOL has restricted notification rules — limited to one message per case. No appointment reminders. Confirm exact rules with Madhuri before finalizing template config.</div>
       <div class="tbl-header tbl-4"><span>Template name</span><span>Channel</span><span>Trigger</span><span>Status</span></div>
       <div class="tbl-row tbl-4"><span>Case notification — single send</span><span><span class="badge badge-blue">Call</span></span><span style="color:var(--text3)">One time only</span><span><span class="badge badge-green">Active</span></span></div>
       <div class="tbl-row tbl-4"><span style="color:var(--text3)">Appointment reminder — 48hr</span><span><span class="badge badge-dim">N/A</span></span><span style="color:var(--text3)">Not used</span><span><span class="badge badge-red">Inactive</span></span></div>
@@ -509,7 +585,6 @@
     </div>
   </div>
 
-  <div class="footer-note">→ RHRP uses a separate SQL Server database and does not route through Oracle HEART CMI. RHRP configuration is covered in a dedicated future dashboard (Story 5).</div>
 </div>
 <script>
 function showPanel(id, btn) {
@@ -569,6 +644,16 @@ function initPipeline() {
       y:{max:5,grid:{color:GRID},border:{dash:[3,3]},ticks:{color:TICK,font:FONT,stepSize:1}}
     }}});
 }
+function filterChannel(val) {
+  ['all','sms','calls','email'].forEach(id => {
+    document.getElementById('ch-' + id).style.display = 'none';
+  });
+  document.getElementById('ch-' + val).style.display = 'block';
+  // init sub-charts lazily
+  if (val==='sms'   && !window.smsInit)   { initSmsChart();   window.smsInit=true; }
+  if (val==='calls' && !window.callsInit) { initCallsChart(); window.callsInit=true; }
+  if (val==='email' && !window.emailInit) { initEmailChart(); window.emailInit=true; }
+}
 function initDelivery() {
   new Chart(document.getElementById('c-delivery-trend'),{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[
     {label:'Calls',data:[81,83,80,84,82,85,83],borderColor:'#1a5fb4',tension:0.3,pointRadius:3,fill:false},
@@ -577,6 +662,30 @@ function initDelivery() {
   ]},options:{...BASE,scales:{
     x:{grid:{display:false},ticks:{color:TICK,font:FONT}},
     y:{min:75,max:102,grid:{color:GRID},border:{dash:[3,3]},ticks:{color:TICK,font:FONT,callback:v=>v+'%'}}
+  }}});
+}
+function initSmsChart() {
+  new Chart(document.getElementById('c-sms-trend'),{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[
+    {label:'SMS',data:[99,98,99,99,100,99,99],borderColor:'#1a7f4b',backgroundColor:'rgba(26,127,75,.08)',tension:0.3,pointRadius:3,fill:true}
+  ]},options:{...BASE,scales:{
+    x:{grid:{display:false},ticks:{color:TICK,font:FONT}},
+    y:{min:95,max:102,grid:{color:GRID},border:{dash:[3,3]},ticks:{color:TICK,font:FONT,callback:v=>v+'%'}}
+  }}});
+}
+function initCallsChart() {
+  new Chart(document.getElementById('c-calls-trend'),{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[
+    {label:'Calls',data:[81,83,80,84,82,85,83],borderColor:'#1a5fb4',backgroundColor:'rgba(26,95,180,.08)',tension:0.3,pointRadius:3,fill:true}
+  ]},options:{...BASE,scales:{
+    x:{grid:{display:false},ticks:{color:TICK,font:FONT}},
+    y:{min:75,max:95,grid:{color:GRID},border:{dash:[3,3]},ticks:{color:TICK,font:FONT,callback:v=>v+'%'}}
+  }}});
+}
+function initEmailChart() {
+  new Chart(document.getElementById('c-email-trend'),{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[
+    {label:'Email',data:[99,100,99,100,99,98,100],borderColor:'#92550a',backgroundColor:'rgba(146,85,10,.08)',tension:0.3,pointRadius:3,fill:true}
+  ]},options:{...BASE,scales:{
+    x:{grid:{display:false},ticks:{color:TICK,font:FONT}},
+    y:{min:95,max:102,grid:{color:GRID},border:{dash:[3,3]},ticks:{color:TICK,font:FONT,callback:v=>v+'%'}}
   }}});
 }
 window.addEventListener('DOMContentLoaded',()=>{ initVol(); window.volInit=true; });
