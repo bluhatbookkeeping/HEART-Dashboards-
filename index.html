@@ -379,16 +379,37 @@
 
   <!-- EMAIL ONLY VIEW -->
   <div id="ch-email" style="display:none;">
-    <div class="kpi-grid kpi-grid-2" style="grid-template-columns:1fr 1fr;">
-      <div class="kpi"><div class="kpi-label">Total emails sent</div><div class="kpi-value blue">6,203</div><div class="kpi-sub">selected period</div></div>
-      <div class="kpi"><div class="kpi-label">Total delivered</div><div class="kpi-value green">6,166</div><div class="kpi-sub">confirmed by vendor</div></div>
+    <div class="notice gray">ℹ Open rate is unreliable — depends on the claimant's email provider. All other statuses are confirmed stored in Oracle via Rectangle Health callback.</div>
+    <div class="kpi-grid kpi-grid-4">
+      <div class="kpi"><div class="kpi-label">Total sent</div><div class="kpi-value blue">6,203</div><div class="kpi-sub">selected period</div></div>
+      <div class="kpi"><div class="kpi-label">Confirmed</div><div class="kpi-value green">1,847</div><div class="kpi-sub">clicked confirmation link</div></div>
+      <div class="kpi"><div class="kpi-label">Opened</div><div class="kpi-value">3,214</div><div class="kpi-sub">unreliable — partial only</div></div>
+      <div class="kpi"><div class="kpi-label">Bounced / Failed</div><div class="kpi-value red">37</div><div class="kpi-sub">could not deliver</div></div>
     </div>
-    <div class="card">
-      <div class="card-title">Email delivery trend</div>
-      <div class="card-sub">7-day email send volume — additional metrics pending vendor confirmation</div>
-      <div class="chart-wrap h180"><canvas id="c-email-trend"></canvas></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Email delivery trend</div>
+        <div class="card-sub">7-day sent vs confirmed vs opened</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-swatch" style="background:#1a5fb4"></div>Sent</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#1a7f4b"></div>Confirmed</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#92550a"></div>Opened</div>
+        </div>
+        <div class="chart-wrap h180"><canvas id="c-email-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Email status breakdown</div>
+        <div class="card-sub">Distribution of all returned statuses</div>
+        <div class="bar-list">
+          <div class="bar-row"><div class="bar-label">Sent</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:#1a5fb4"></div></div><div class="bar-val">6,203</div></div>
+          <div class="bar-row"><div class="bar-label">Opened</div><div class="bar-track"><div class="bar-fill" style="width:52%;background:#92550a"></div></div><div class="bar-val">3,214</div></div>
+          <div class="bar-row"><div class="bar-label">Confirmed</div><div class="bar-track"><div class="bar-fill" style="width:30%;background:#1a7f4b"></div></div><div class="bar-val">1,847</div></div>
+          <div class="bar-row"><div class="bar-label">URL clicks</div><div class="bar-track"><div class="bar-fill" style="width:24%;background:#8b93b0"></div></div><div class="bar-val">1,490</div></div>
+          <div class="bar-row"><div class="bar-label">Bounced</div><div class="bar-track"><div class="bar-fill" style="width:4%;background:var(--red)"></div></div><div class="bar-val">24</div></div>
+          <div class="bar-row"><div class="bar-label">Failed</div><div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--red)"></div></div><div class="bar-val">13</div></div>
+        </div>
+      </div>
     </div>
-    <div class="footer-note">→ Additional email metrics (avg send-to-confirm, failure reasons by type) are pending confirmation of what data the third-party email vendor returns. Andrew to confirm with Madhuri before this view is expanded.</div>
   </div>
 </div>
 
@@ -670,10 +691,12 @@ function initCallsChart() {
 }
 function initEmailChart() {
   new Chart(document.getElementById('c-email-trend'),{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[
-    {label:'Email',data:[99,100,99,100,99,98,100],borderColor:'#92550a',backgroundColor:'rgba(146,85,10,.08)',tension:0.3,pointRadius:3,fill:true}
+    {label:'Sent',    data:[900,920,850,980,940,380,233], borderColor:'#1a5fb4', tension:0.3, pointRadius:3, fill:false},
+    {label:'Confirmed',data:[270,285,250,295,285,110,68], borderColor:'#1a7f4b', tension:0.3, pointRadius:3, fill:false, borderDash:[4,2]},
+    {label:'Opened',  data:[465,480,440,510,490,198,121], borderColor:'#92550a', tension:0.3, pointRadius:3, fill:false, borderDash:[2,2]}
   ]},options:{...BASE,scales:{
     x:{grid:{display:false},ticks:{color:TICK,font:FONT}},
-    y:{min:95,max:102,grid:{color:GRID},border:{dash:[3,3]},ticks:{color:TICK,font:FONT,callback:v=>v+'%'}}
+    y:{grid:{color:GRID},border:{dash:[3,3]},ticks:{color:TICK,font:FONT,callback:v=>v>=1000?(v/1000).toFixed(1)+'k':v}}
   }}});
 }
 window.addEventListener('DOMContentLoaded',()=>{ initVol(); window.volInit=true; });
